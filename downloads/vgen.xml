@@ -1,0 +1,937 @@
+<Export generator="IRIS" version="26" zv="IRIS for UNIX (Ubuntu Server LTS for x86-64 Containers) 2024.1 (Build 262U)" ts="2024-07-20 02:57:00">
+<Class name="vgen.HttpClient">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>67041,10620.408008768</TimeChanged>
+<TimeCreated>67041,10620.403531378</TimeCreated>
+<Property name="HttpRequest">
+<InitialExpression>##class(%Net.HttpRequest).%New()</InitialExpression>
+</Property>
+<Property name="SSLConfiguration">
+<Type>%String</Type>
+<InitialExpression>..#SSLCONFIGURATION</InitialExpression>
+</Property>
+<Property name="Server">
+<Type>%String</Type>
+<InitialExpression>..#SERVER</InitialExpression>
+</Property>
+<Property name="URLComponents">
+<MultiDimensional>1</MultiDimensional>
+</Property>
+<Method name="%OnNew">
+<FormalSpec>Server:%String,SSLConfiguration:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set:$Data(Server) ..Server = Server Set:$Data(SSLConfiguration) ..SSLConfiguration = SSLConfiguration Quit ..InitializeHttpRequestObject() ]]>
+</Implementation>
+</Method>
+<Method name="InitializeHttpRequestObject">
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set ..HttpRequest = ##class(%Net.HttpRequest).%New() Do ##class(%Net.URLParser).Decompose(..Server, .components) Set:$Data(components("host"), host) ..HttpRequest.Server = host Set:$Data(components("port"), port) ..HttpRequest.Port = port Set:$$$LOWER($Get(components("scheme")))="https" ..HttpRequest.Https = $$$YES, ..HttpRequest.SSLConfiguration = ..SSLConfiguration Merge:$Data(components) ..URLComponents = components Quit $$$OK ]]>
+</Implementation>
+</Method>
+<Method name="asynchronousvistaPOST">
+<Description> Implement operationId : asynchronousvistaPOST post /asynchronous/vista</Description>
+<FormalSpec>requestMessage:vgen.requests.asynchronousvistaPOST,*responseMessage:vgen.responses.asynchronousvistaPOST=##class(vgen.responses.asynchronousvistaPOST).%New()</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK $$$QuitOnError(requestMessage.LoadHttpRequestObject(..HttpRequest)) $$$QuitOnError(..HttpRequest.Send("POST", $Get(..URLComponents("path")) _ requestMessage.%URL)) $$$QuitOnError(responseMessage.LoadFromResponse(..HttpRequest.HttpResponse, "asynchronousvistaPOST")) Quit sc ]]>
+</Implementation>
+</Method>
+<Method name="synchronousvistaPOST">
+<Description> Implement operationId : synchronousvistaPOST post /synchronous/vista</Description>
+<FormalSpec>requestMessage:vgen.requests.synchronousvistaPOST,*responseMessage:vgen.responses.synchronousvistaPOST=##class(vgen.responses.synchronousvistaPOST).%New()</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK $$$QuitOnError(requestMessage.LoadHttpRequestObject(..HttpRequest)) $$$QuitOnError(..HttpRequest.Send("POST", $Get(..URLComponents("path")) _ requestMessage.%URL)) $$$QuitOnError(responseMessage.LoadFromResponse(..HttpRequest.HttpResponse, "synchronousvistaPOST")) Quit sc ]]>
+</Implementation>
+</Method>
+<Parameter name="SERVER">
+<Default>/</Default>
+</Parameter>
+<Parameter name="SSLCONFIGURATION">
+<Default>DefaultSSL</Default>
+</Parameter>
+</Class>
+<Class name="vgen.Production">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.Production</Super>
+<TimeChanged>67041,10620.892420224</TimeChanged>
+<TimeCreated>67041,10620.891906681</TimeCreated>
+<XData name="ProductionDefinition">
+<Data>
+<![CDATA[ <Production Name="vgen" LogGeneralTraceEvents="false"> <Description></Description> <ActorPoolSize>2</ActorPoolSize> <Item Name="vgen.bs.ProxyService" Category="" ClassName="vgen.bs.ProxyService" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule=""></Item> <Item Name="vgen.bs.asynchronousvistaPOST" Category="" ClassName="vgen.bs.asynchronousvistaPOST" PoolSize="1" Enabled="false" Foreground="false" Comment="" LogTraceEvents="false" Schedule=""></Item> <Item Name="vgen.bs.synchronousvistaPOST" Category="" ClassName="vgen.bs.synchronousvistaPOST" PoolSize="1" Enabled="false" Foreground="false" Comment="" LogTraceEvents="false" Schedule=""></Item> <Item Name="vgen.bo.Operation" Category="" ClassName="vgen.bo.Operation" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule=""> <Setting Target="Adapter" Name="HTTPServer"></Setting> <Setting Target="Adapter" Name="SSLConfig">DefaultSSL</Setting> <Setting Target="Adapter" Name="HTTPPort"></Setting> <Setting Target="Adapter" Name="URL">/</Setting> </Item> <Item Name="vgen.bp.Process" Category="" ClassName="vgen.bp.Process" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule=""> </Item> <Item Name="vgen.bp.SyncProcess" Category="" ClassName="vgen.bp.SyncProcess" PoolSize="1" Enabled="true" Foreground="false" Comment="" LogTraceEvents="false" Schedule=""> </Item> </Production> ]]>
+</Data>
+</XData>
+</Class>
+<Class name="vgen.Utils">
+<IncludeCode>Ensemble</IncludeCode>
+<TimeChanged>67041,10620.812434662</TimeChanged>
+<TimeCreated>67039,74488.31499496</TimeCreated>
+<Method name="invokeHostAsync">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>targetHostName:%String,message:%Persistent,serviceName:%String="EnsLib.Testing.Service",sessionId:%Integer=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ #dim sc As %Status #dim prod As Ens.Config.Production = ..getCurrentProduction() if '$isObject(prod) quit $$$ERROR($$$GeneralError, "Produciton is not running") #dim item As Ens.Config.Item = ..findConfigItem(targetHostName) if '$isObject(item) quit $$$ERROR($$$GeneralError, "Host " _ targetHostName _ " not found") #dim service As Ens.BusinessService set sc = ##class(Ens.Director).CreateBusinessService(serviceName, .service) if $$$ISERR(sc) quit sc if (sessionId '= "") set service.%SessionId = sessionId set sc = service.SendRequestAsync(targetHostName, message) quit sc ]]>
+</Implementation>
+</Method>
+<Method name="invokeHostSync">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>targetHostName:%String,message:%Persistent,serviceName:%String="EnsLib.Testing.Service",sessionId:%Integer="",pResponse:Ens.Response</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ #dim sc As %Status #dim prod As Ens.Config.Production = ..getCurrentProduction() if '$isObject(prod) quit $$$ERROR($$$GeneralError, "Produciton is not running") #dim item As Ens.Config.Item = ..findConfigItem(targetHostName) if '$isObject(item) quit $$$ERROR($$$GeneralError, "Host " _ targetHostName _ " not found") #dim service As Ens.BusinessService set sc = ##class(Ens.Director).CreateBusinessService(serviceName, .service) if $$$ISERR(sc) quit sc if (sessionId '= "") set service.%SessionId = sessionId set sc = service.SendRequestSync(targetHostName, message, .pResponse) quit sc ]]>
+</Implementation>
+</Method>
+<Method name="getCurrentProduction">
+<Description> Get current production</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>Ens.Config.Production</ReturnType>
+<Implementation>
+<![CDATA[ #dim sc As %Status #dim prodName As %String #dim prodState As %Integer // Get produciton name if '##class(Ens.Director).IsProductionRunning(.prodName) quit "" // Open produciton by name #dim prod As Ens.Config.Production = ##class(Ens.Config.Production).%OpenId(prodName, , .sc) if $$$ISERR(sc) { $$$LOGERROR($System.Status.GetErrorText(sc)) quit "" } quit prod ]]>
+</Implementation>
+</Method>
+<Method name="findConfigItem">
+<Description> Find host by name</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>name:%String,businessType:%String="",enabledOnly:%Boolean=0</FormalSpec>
+<ReturnType>Ens.Config.Item</ReturnType>
+<Implementation>
+<![CDATA[ #dim sc As %Status // Get current production #dim prod As Ens.Config.Production = ..getCurrentProduction() if '$isObject(prod) quit "" // Search for our target #dim item As Ens.Config.Item #dim result As Ens.Config.Item = "" for i = prod.Items.Count():-1:1 { set item = prod.Items.GetAt(i) if '$isObject(item) continue if ((businessType '= "") && (item.BusinessType() '= businessType)) || (item.Name '= name) || (enabledOnly && 'item.Enabled) continue set result = item quit } Quit result ]]>
+</Implementation>
+</Method>
+<Method name="getSwaggerSpec">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,xDataName:%String,webapp:%String,*sc:%Status</FormalSpec>
+<ReturnType>%DynamicObject</ReturnType>
+<Implementation>
+<![CDATA[ set sc = $$$OK Set xDataTemplate = ##class(%Dictionary.CompiledXData).%OpenId(className _ "||" _ xDataName ,,.sc) Quit:$$$ISERR(sc) "" Try{ Set swagger = {}.%FromJSON(xDataTemplate.Data) Set swagger.basePath = webapp Set:$Get(%request)'="" swagger.host = %request.CgiEnvs("SERVER_NAME") _ ":" _ %request.CgiEnvs("SERVER_PORT") } Catch (ex) { Set sc = ex.AsStatus() } Quit:$$$ISERR(sc) "" Quit swagger ]]>
+</Implementation>
+</Method>
+<Method name="log">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>msg:%String,nl:%Boolean=$$$YES,dtOnNL:%Boolean=$$$YES</FormalSpec>
+<Implementation>
+<![CDATA[ Quit:$Get(%zverbose)=0 Write:nl ! Write:nl&&dtOnNL $ZDateTime($Horolog, 3, 1), " " Write msg Quit ]]>
+</Implementation>
+</Method>
+</Class>
+<Class name="vgen.bo.Operation">
+<Description> Generated Business Operation</Description>
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.BusinessOperation</Super>
+<TimeChanged>67041,10620.893225155</TimeChanged>
+<TimeCreated>67041,10620.437833311</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="Adapter">
+<Type>EnsLib.HTTP.OutboundAdapter</Type>
+</Property>
+<Method name="asynchronousvistaPOST">
+<Description> Implement operationId : asynchronousvistaPOST post /asynchronous/vista</Description>
+<FormalSpec>requestMessage:vgen.requests.asynchronousvistaPOST,*responseMessage:vgen.responses.asynchronousvistaPOST</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ set responseMessage = ##class(vgen.responses.asynchronousvistaPOST).%New() return ..zzHandleRequest(requestMessage, "asynchronousvistaPOST", "post", responseMessage) ]]>
+</Implementation>
+</Method>
+<Method name="synchronousvistaPOST">
+<Description> Implement operationId : synchronousvistaPOST post /synchronous/vista</Description>
+<FormalSpec>requestMessage:vgen.requests.synchronousvistaPOST,*responseMessage:vgen.responses.synchronousvistaPOST</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ set responseMessage = ##class(vgen.responses.synchronousvistaPOST).%New() return ..zzHandleRequest(requestMessage, "synchronousvistaPOST", "post", responseMessage) ]]>
+</Implementation>
+</Method>
+<Method name="zzHandleRequest">
+<Description> Common request handler</Description>
+<FormalSpec>requestMessage:Ens.Request,name:%String,method:%String,responseMessage:vgen.responses.GenericResponse</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ set sc = $$$OK, pHttpRequestIn = ##class(%Net.HttpRequest).%New() $$$QuitOnError(requestMessage.LoadHttpRequestObject(pHttpRequestIn)) set sc = ..Adapter.SendFormDataArray(.pHttpResponse, method, pHttpRequestIn, , , ..Adapter.URL _ requestMessage.%URL) if $$$ISERR(sc) && ($SYSTEM.Status.GetErrorCodes(sc) '= $$$EnsErrHTTPStatus) { return sc } if $ISOBJECT(pHttpResponse) { $$$TRACE(name _" returned " _ pHttpResponse.StatusCode) $$$QuitOnError(responseMessage.LoadFromResponse(pHttpResponse, name)) } return sc ]]>
+</Implementation>
+</Method>
+<Parameter name="ADAPTER">
+<Default>EnsLib.HTTP.OutboundAdapter</Default>
+</Parameter>
+<XData name="MessageMap">
+<Data>
+<![CDATA[ <MapItems> <MapItem MessageType="vgen.requests.asynchronousvistaPOST"> <Method>asynchronousvistaPOST</Method> </MapItem> <MapItem MessageType="vgen.requests.synchronousvistaPOST"> <Method>synchronousvistaPOST</Method> </MapItem> </MapItems> ]]>
+</Data>
+</XData>
+</Class>
+<Class name="vgen.bp.Process">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.BusinessProcess</Super>
+<TimeChanged>67041,10620.433916239</TimeChanged>
+<TimeCreated>67041,10620.433241224</TimeCreated>
+<Inheritance>left</Inheritance>
+<Method name="OnRequest">
+<FormalSpec>pRequest:Ens.Request,pResponse:Ens.Response</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Return ..SendRequestAsync("vgen.bo.Operation", pRequest, 1, pRequest.%ClassName(1)) ]]>
+</Implementation>
+</Method>
+<Method name="OnResponse">
+<FormalSpec>request:%Library.Persistent,response:%Library.Persistent,callrequest:%Library.Persistent,callresponse:%Library.Persistent,pCompletionKey:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Return $$$OK ]]>
+</Implementation>
+</Method>
+</Class>
+<Class name="vgen.bp.SyncProcess">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.BusinessProcess</Super>
+<TimeChanged>67041,10620.434833732</TimeChanged>
+<TimeCreated>67041,10620.434130274</TimeCreated>
+<Inheritance>left</Inheritance>
+<Method name="OnRequest">
+<FormalSpec>pRequest:Ens.Request,pResponse:Ens.Response</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Return ..SendRequestSync("vgen.bo.Operation", pRequest, .pResponse, ,pRequest.%ClassName(1)) ]]>
+</Implementation>
+</Method>
+<Method name="OnResponse">
+<FormalSpec>request:%Library.Persistent,response:%Library.Persistent,callrequest:%Library.Persistent,callresponse:%Library.Persistent,pCompletionKey:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Return $$$OK ]]>
+</Implementation>
+</Method>
+</Class>
+<Class name="vgen.bs.ProxyService">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.BusinessService</Super>
+<TimeChanged>67041,10620.43765194</TimeChanged>
+<TimeCreated>67041,10620.437390988</TimeCreated>
+<Inheritance>left</Inheritance>
+</Class>
+<Class name="vgen.bs.asynchronousvistaPOST">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.BusinessService</Super>
+<TimeChanged>67041,10620.43711879</TimeChanged>
+<TimeCreated>67041,10620.436275911</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="Adapter">
+<Description> Auto generated : Change by your Adapter type.</Description>
+<Type>Ens.Adapter</Type>
+</Property>
+<Method name="OnProcessInput">
+<Description> Auto generated method</Description>
+<FormalSpec>pInput:%RegisteredObject,pOutput:%RegisteredObject</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK Set msg = ##class(vgen.requests.asynchronousvistaPOST).%New() ; Auto generated, put your own code... Return ..SendRequestAsync("vgen.bp.Process", msg) ]]>
+</Implementation>
+</Method>
+<Parameter name="ADAPTER">
+<Description> Auto generated : Change by your Adapter type.</Description>
+<Default>Ens.Adapter</Default>
+</Parameter>
+</Class>
+<Class name="vgen.bs.synchronousvistaPOST">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.BusinessService</Super>
+<TimeChanged>67041,10620.435952204</TimeChanged>
+<TimeCreated>67041,10620.435159325</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="Adapter">
+<Description> Auto generated : Change by your Adapter type.</Description>
+<Type>Ens.Adapter</Type>
+</Property>
+<Method name="OnProcessInput">
+<Description> Auto generated method</Description>
+<FormalSpec>pInput:%RegisteredObject,pOutput:%RegisteredObject</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK Set msg = ##class(vgen.requests.synchronousvistaPOST).%New() ; Auto generated, put your own code... Return ..SendRequestAsync("vgen.bp.Process", msg) ]]>
+</Implementation>
+</Method>
+<Parameter name="ADAPTER">
+<Description> Auto generated : Change by your Adapter type.</Description>
+<Default>Ens.Adapter</Default>
+</Parameter>
+</Class>
+<Class name="vgen.model.AsyncVistaRequest">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.410422361</TimeChanged>
+<TimeCreated>67041,10620.284516167</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="appid">
+<Description> The ID of the application making the call</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="app_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="calls">
+<Description> A conceptual webservice call to VistA using this API</Description>
+<Type>vgen.model.synchronousvistacalls</Type>
+<Collection>list</Collection>
+<Required>1</Required>
+</Property>
+<Property name="packageid">
+<Description> The VistA package ID associated with the calls being made</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="package_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="siteids">
+<Description> An ordered array of VistA site ids. The calls will be made asynchronously to all the VistA sites.</Description>
+<Type>%String</Type>
+<Collection>list</Collection>
+<Parameter name="%JSONFIELDNAME" value="site_ids"/>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.Call">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.282958173</TimeChanged>
+<TimeCreated>67041,10620.282295784</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="istransactional">
+<Description> Whether or not this is a transactional call</Description>
+<Type>%Boolean</Type>
+<Parameter name="%JSONFIELDNAME" value="is_transactional"/>
+</Property>
+<Property name="operations">
+<Description> The CRUD operation associated with the Record.</Description>
+<Type>vgen.model.synchronousvistaoperations</Type>
+<Collection>list</Collection>
+<Required>1</Required>
+</Property>
+</Class>
+<Class name="vgen.model.CallInfo">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.41196302</TimeChanged>
+<TimeCreated>67041,10620.287595722</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="istransactional">
+<Description> Whether or not the call made was transactional</Description>
+<Type>%Boolean</Type>
+<Parameter name="%JSONFIELDNAME" value="is_transactional"/>
+</Property>
+<Property name="maxrecorddepth">
+<Description> If the call made was a READ, the value max_record_depth was set to.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_record_depth"/>
+</Property>
+<Property name="maxrecordsreturned">
+<Description> If the call made was a READ, the value max_records_returned was set to.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_records_returned"/>
+</Property>
+<Property name="operation">
+<Description> The operation of the call made</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+<Parameter name="VALUELIST" value=",CREATE,READ,UPDATE,DELETE"/>
+</Property>
+</Class>
+<Class name="vgen.model.CallResponse">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.287313445</TimeChanged>
+<TimeCreated>67041,10620.28653075</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="callinfo">
+<Description> Information about a call that was made</Description>
+<Type>vgen.model.VistaResponsecallinfo</Type>
+<Parameter name="%JSONFIELDNAME" value="call_info"/>
+</Property>
+<Property name="httpresponse">
+<Description> The HTTP Response associated with a call response</Description>
+<Type>vgen.model.VistaResponsehttpresponse</Type>
+<Parameter name="%JSONFIELDNAME" value="http_response"/>
+</Property>
+<Property name="records">
+<Description> Represents a record in VistA. Synonymous with a table row in a database.</Description>
+<Type>vgen.model.synchronousvistarecord</Type>
+<Collection>list</Collection>
+</Property>
+</Class>
+<Class name="vgen.model.Field">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.414998908</TimeChanged>
+<TimeCreated>67041,10620.274113826</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="id">
+<Description> The identifying number of the field</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="name">
+<Description> The name of the field.</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="value">
+<Description> The value of the field</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="valuetype">
+<Description> The type associated with the field value</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="value_type"/>
+<Parameter name="MAXLEN"/>
+<Parameter name="VALUELIST" value=",DATE/TIME,NUMERIC,SET_OF_CODES,FREE_TEXT,WORD-PROCESSING,COMPUTED,POINTER_TO_A_FILE,VARIABLE-POINTER,MUMPS,MULTIPLE,BOOLEAN,LABEL_REFERENCE,TIME,YEAR,UNIVERSAL_TIME,FT_POINTER,FT_DATE,RATIO"/>
+</Property>
+</Class>
+<Class name="vgen.model.File">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.415787199</TimeChanged>
+<TimeCreated>67041,10620.279087395</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="fields">
+<Description> A field on a File. The name or id number is required.</Description>
+<Type>vgen.model.synchronousvistarecordfilefields</Type>
+<Collection>list</Collection>
+</Property>
+<Property name="id">
+<Description> The file identifier.. dot delimited numbers</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.HttpResponse">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.416547145</TimeChanged>
+<TimeCreated>67041,10620.28883689</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="httpstatuscode">
+<Description> The HTTP status code associated with the call response</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="http_status_code"/>
+</Property>
+<Property name="message">
+<Description> The description/message associated with an http response</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.Operation">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.417391232</TimeChanged>
+<TimeCreated>67041,10620.280939689</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="maxrecorddepth">
+<Description> For READ operations, the max Record Object depth. Defaults to 2. Ignored for operations other than READ.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_record_depth"/>
+</Property>
+<Property name="maxrecordsreturned">
+<Description> For READ operations, the max number of records returned. Defaults to 50. Ignored for operations other than READ.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_records_returned"/>
+</Property>
+<Property name="operation">
+<Description> The CRUD operation</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<Parameter name="MAXLEN"/>
+<Parameter name="VALUELIST" value=",CREATE,READ,UPDATE,DELETE"/>
+</Property>
+<Property name="record">
+<Description> Represents a record in VistA. Synonymous with a table row in a database.</Description>
+<Type>vgen.model.synchronousvistarecord</Type>
+<Required>1</Required>
+</Property>
+</Class>
+<Class name="vgen.model.Record">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.418235969</TimeChanged>
+<TimeCreated>67041,10620.2800334</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="file">
+<Description> a VistA File. Analogous with a database table.</Description>
+<Type>vgen.model.synchronousvistarecordfile</Type>
+</Property>
+<Property name="ien">
+<Description> Internal Entry Number.. analogous to a primary key id in a database.</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.VistaRequest">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.420149953</TimeChanged>
+<TimeCreated>67041,10620.28322629</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="appid">
+<Description> The ID of the application making the call</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="app_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="calls">
+<Description> A conceptual webservice call to VistA using this API</Description>
+<Type>vgen.model.synchronousvistacalls</Type>
+<Collection>list</Collection>
+<Required>1</Required>
+</Property>
+<Property name="packageid">
+<Description> The VistA package ID associated with the calls being made</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="package_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="siteid">
+<Description> The id of the VistA site</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="site_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.VistaResponse">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.286280629</TimeChanged>
+<TimeCreated>67041,10620.285810292</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="callresponses">
+<Description> The response from a call. A transactional call will have a single call response. A non-transactional call will have each operation treated as a separate call.</Description>
+<Type>vgen.model.VistaResponsecallresponses</Type>
+<Collection>list</Collection>
+<Parameter name="%JSONFIELDNAME" value="call_responses"/>
+</Property>
+</Class>
+<Class name="vgen.model.VistaResponsecallinfo">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.421431971</TimeChanged>
+<TimeCreated>67041,10620.298940392</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="istransactional">
+<Description> Whether or not the call made was transactional</Description>
+<Type>%Boolean</Type>
+<Parameter name="%JSONFIELDNAME" value="is_transactional"/>
+</Property>
+<Property name="maxrecorddepth">
+<Description> If the call made was a READ, the value max_record_depth was set to.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_record_depth"/>
+</Property>
+<Property name="maxrecordsreturned">
+<Description> If the call made was a READ, the value max_records_returned was set to.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_records_returned"/>
+</Property>
+<Property name="operation">
+<Description> The operation of the call made</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+<Parameter name="VALUELIST" value=",CREATE,READ,UPDATE,DELETE"/>
+</Property>
+</Class>
+<Class name="vgen.model.VistaResponsecallresponses">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.302274278</TimeChanged>
+<TimeCreated>67041,10620.301365604</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="callinfo">
+<Description> Information about a call that was made</Description>
+<Type>vgen.model.VistaResponsecallinfo</Type>
+<Parameter name="%JSONFIELDNAME" value="call_info"/>
+</Property>
+<Property name="httpresponse">
+<Description> The HTTP Response associated with a call response</Description>
+<Type>vgen.model.VistaResponsehttpresponse</Type>
+<Parameter name="%JSONFIELDNAME" value="http_response"/>
+</Property>
+<Property name="records">
+<Description> Represents a record in VistA. Synonymous with a table row in a database.</Description>
+<Type>vgen.model.synchronousvistarecord</Type>
+<Collection>list</Collection>
+</Property>
+</Class>
+<Class name="vgen.model.VistaResponsehttpresponse">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.422731261</TimeChanged>
+<TimeCreated>67041,10620.300406477</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="httpstatuscode">
+<Description> The HTTP status code associated with the call response</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="http_status_code"/>
+</Property>
+<Property name="message">
+<Description> The description/message associated with an http response</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.asynchronousvistabody">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.424504017</TimeChanged>
+<TimeCreated>67041,10620.297439093</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="appid">
+<Description> The ID of the application making the call</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="app_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="calls">
+<Description> A conceptual webservice call to VistA using this API</Description>
+<Type>vgen.model.synchronousvistacalls</Type>
+<Collection>list</Collection>
+<Required>1</Required>
+</Property>
+<Property name="packageid">
+<Description> The VistA package ID associated with the calls being made</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="package_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="siteids">
+<Description> An ordered array of VistA site ids. The calls will be made asynchronously to all the VistA sites.</Description>
+<Type>%String</Type>
+<Collection>list</Collection>
+<Parameter name="%JSONFIELDNAME" value="site_ids"/>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.inlineresponse200">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.297194443</TimeChanged>
+<TimeCreated>67041,10620.296749412</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="callresponses">
+<Description> The response from a call. A transactional call will have a single call response. A non-transactional call will have each operation treated as a separate call.</Description>
+<Type>vgen.model.VistaResponsecallresponses</Type>
+<Collection>list</Collection>
+<Parameter name="%JSONFIELDNAME" value="call_responses"/>
+</Property>
+</Class>
+<Class name="vgen.model.spec">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>67041,10620.246219838</TimeChanged>
+<TimeCreated>67041,10620.152473878</TimeCreated>
+<XData name="OpenAPI">
+<MimeType>application/json</MimeType>
+<Data>
+<![CDATA[ { "openapi":"3.0.2", "info":{ "title":"VALIP Generic VistA CRUD API", "description":"Internal API for generically doing CRUD operations with VistA instances", "contact":{ "name":"MunChul Shin", "email":"munchul.shin@va.gov" }, "version":"1.0.0" }, "servers":[ { "url":"/" } ], "tags":[ { "name":"VistA", "description":"This API communicates with VistA" } ], "paths":{ "/synchronous/vista":{ "post":{ "summary":"Interact with VistA. CRUD operations will be defined by the payload.", "parameters":[ { "name":"sec_id", "in":"header", "required":true, "style":"simple", "explode":false, "schema":{ "type":"string" } } ], "requestBody":{ "content":{ "application/json":{ "schema":{ "$ref":"#/components/schemas/synchronous_vista_body" } } }, "required":true }, "responses":{ "200":{ "description":"Success", "content":{ "application/json":{ "schema":{ "$ref":"#/components/schemas/inline_response_200" } } } } } } }, "/asynchronous/vista":{ "post":{ "parameters":[ { "name":"sec_id", "in":"header", "required":true, "style":"simple", "explode":false, "schema":{ "type":"string" } } ], "requestBody":{ "content":{ "application/json":{ "schema":{ "$ref":"#/components/schemas/asynchronous_vista_body" } } }, "required":true }, "responses":{ "501":{ "description":"Not Implemented" } } } } }, "components":{ "schemas":{ "Field":{ "type":"object", "properties":{ "value":{ "type":"string", "description":"The value of the field" }, "name":{ "type":"string", "description":"The name of the field." }, "id":{ "type":"string", "description":"The identifying number of the field" }, "value_type":{ "type":"string", "description":"The type associated with the field value", "enum":[ "DATE/TIME", "NUMERIC", "SET_OF_CODES", "FREE_TEXT", "WORD-PROCESSING", "COMPUTED", "POINTER_TO_A_FILE", "VARIABLE-POINTER", "MUMPS", "MULTIPLE", "BOOLEAN", "LABEL_REFERENCE", "TIME", "YEAR", "UNIVERSAL_TIME", "FT_POINTER", "FT_DATE", "RATIO" ] } }, "description":"A field on a File. The name or id number is required." }, "File":{ "required":[ "id" ], "type":"object", "properties":{ "id":{ "type":"string", "description":"The file identifier.. dot delimited numbers" }, "fields":{ "type":"array", "description":"An array of fields associated with this File", "items":{ "$ref":"#/components/schemas/synchronousvista_record_file_fields" } } }, "description":"a VistA File. Analogous with a database table." }, "Record":{ "required":[ "ien" ], "type":"object", "properties":{ "ien":{ "type":"string", "description":"Internal Entry Number.. analogous to a primary key id in a database." }, "file":{ "$ref":"#/components/schemas/synchronousvista_record_file" } }, "description":"Represents a record in VistA. Synonymous with a table row in a database." }, "Operation":{ "required":[ "operation", "record" ], "type":"object", "properties":{ "operation":{ "type":"string", "description":"The CRUD operation", "enum":[ "CREATE", "READ", "UPDATE", "DELETE" ] }, "record":{ "$ref":"#/components/schemas/synchronousvista_record" }, "max_records_returned":{ "type":"integer", "description":"For READ operations, the max number of records returned. Defaults to 50. Ignored for operations other than READ." }, "max_record_depth":{ "type":"integer", "description":"For READ operations, the max Record Object depth. Defaults to 2. Ignored for operations other than READ." } }, "description":"The CRUD operation associated with the Record." }, "Call":{ "required":[ "is_transactional", "operations" ], "type":"object", "properties":{ "operations":{ "type":"array", "description":"The ordered list of operations associated with this Call", "items":{ "$ref":"#/components/schemas/synchronousvista_operations" } }, "is_transactional":{ "type":"boolean", "description":"Whether or not this is a transactional call" } }, "description":"A conceptual webservice call to VistA using this API" }, "VistaRequest":{ "required":[ "calls", "site_id" ], "type":"object", "properties":{ "calls":{ "type":"array", "description":"An ordered array of calls", "items":{ "$ref":"#/components/schemas/synchronousvista_calls" } }, "app_id":{ "type":"string", "description":"The ID of the application making the call" }, "site_id":{ "type":"string", "description":"The id of the VistA site" }, "package_id":{ "type":"string", "description":"The VistA package ID associated with the calls being made" } }, "description":"Request object to do synchronous CRUD operations with VistA" }, "AsyncVistaRequest":{ "required":[ "calls", "site_ids" ], "type":"object", "properties":{ "calls":{ "type":"array", "description":"An ordered array of calls", "items":{ "$ref":"#/components/schemas/synchronousvista_calls" } }, "app_id":{ "type":"string", "description":"The ID of the application making the call" }, "package_id":{ "type":"string", "description":"The VistA package ID associated with the calls being made" }, "site_ids":{ "type":"array", "description":"An ordered array of VistA site ids. The calls will be made asynchronously to all the VistA sites.", "items":{ "type":"string" } } }, "description":"Request object to do asynchronous CRUD operations with VistA" }, "VistaResponse":{ "type":"object", "properties":{ "call_responses":{ "type":"array", "description":"An ordered array of call responses", "items":{ "$ref":"#/components/schemas/VistaResponse_call_responses" } } } }, "CallResponse":{ "type":"object", "properties":{ "call_info":{ "$ref":"#/components/schemas/VistaResponse_call_info" }, "http_response":{ "$ref":"#/components/schemas/VistaResponse_http_response" }, "records":{ "type":"array", "description":"Not used for transactional calls. Not used for updates or deletes. For non-transactional calls, an array with a single record ien created OR an array of all of the records read back.", "items":{ "$ref":"#/components/schemas/synchronousvista_record" } } }, "description":"The response from a call. A transactional call will have a single call response. A non-transactional call will have each operation treated as a separate call." }, "CallInfo":{ "type":"object", "properties":{ "is_transactional":{ "type":"boolean", "description":"Whether or not the call made was transactional" }, "operation":{ "type":"string", "description":"The operation of the call made", "enum":[ "CREATE", "READ", "UPDATE", "DELETE" ] }, "max_record_depth":{ "type":"integer", "description":"If the call made was a READ, the value max_record_depth was set to." }, "max_records_returned":{ "type":"integer", "description":"If the call made was a READ, the value max_records_returned was set to." } }, "description":"Information about a call that was made" }, "HttpResponse":{ "type":"object", "properties":{ "http_status_code":{ "type":"integer", "description":"The HTTP status code associated with the call response" }, "message":{ "type":"string", "description":"The description/message associated with an http response" } }, "description":"The HTTP Response associated with a call response" }, "synchronousvista_record_file_fields":{ "type":"object", "properties":{ "value":{ "type":"string", "description":"The value of the field" }, "name":{ "type":"string", "description":"The name of the field." }, "id":{ "type":"string", "description":"The identifying number of the field" }, "value_type":{ "type":"string", "description":"The type associated with the field value", "enum":[ "DATE/TIME", "NUMERIC", "SET_OF_CODES", "FREE_TEXT", "WORD-PROCESSING", "COMPUTED", "POINTER_TO_A_FILE", "VARIABLE-POINTER", "MUMPS", "MULTIPLE", "BOOLEAN", "LABEL_REFERENCE", "TIME", "YEAR", "UNIVERSAL_TIME", "FT_POINTER", "FT_DATE", "RATIO" ] } }, "description":"A field on a File. The name or id number is required." }, "synchronousvista_record_file":{ "required":[ "id" ], "type":"object", "properties":{ "id":{ "type":"string", "description":"The file identifier.. dot delimited numbers" }, "fields":{ "type":"array", "description":"An array of fields associated with this File", "items":{ "$ref":"#/components/schemas/synchronousvista_record_file_fields" } } }, "description":"a VistA File. Analogous with a database table." }, "synchronousvista_record":{ "required":[ "ien" ], "type":"object", "properties":{ "ien":{ "type":"string", "description":"Internal Entry Number.. analogous to a primary key id in a database." }, "file":{ "$ref":"#/components/schemas/synchronousvista_record_file" } }, "description":"Represents a record in VistA. Synonymous with a table row in a database." }, "synchronousvista_operations":{ "required":[ "operation", "record" ], "type":"object", "properties":{ "operation":{ "type":"string", "description":"The CRUD operation", "enum":[ "CREATE", "READ", "UPDATE", "DELETE" ] }, "record":{ "$ref":"#/components/schemas/synchronousvista_record" }, "max_records_returned":{ "type":"integer", "description":"For READ operations, the max number of records returned. Defaults to 50. Ignored for operations other than READ." }, "max_record_depth":{ "type":"integer", "description":"For READ operations, the max Record Object depth. Defaults to 2. Ignored for operations other than READ." } }, "description":"The CRUD operation associated with the Record." }, "synchronousvista_calls":{ "required":[ "is_transactional", "operations" ], "type":"object", "properties":{ "operations":{ "type":"array", "description":"The ordered list of operations associated with this Call", "items":{ "$ref":"#/components/schemas/synchronousvista_operations" } }, "is_transactional":{ "type":"boolean", "description":"Whether or not this is a transactional call" } }, "description":"A conceptual webservice call to VistA using this API" }, "synchronous_vista_body":{ "required":[ "calls", "site_id" ], "type":"object", "properties":{ "calls":{ "type":"array", "description":"An ordered array of calls", "items":{ "$ref":"#/components/schemas/synchronousvista_calls" } }, "app_id":{ "type":"string", "description":"The ID of the application making the call" }, "site_id":{ "type":"string", "description":"The id of the VistA site" }, "package_id":{ "type":"string", "description":"The VistA package ID associated with the calls being made" } }, "description":"Request object to do synchronous CRUD operations with VistA" }, "inline_response_200":{ "type":"object", "properties":{ "call_responses":{ "type":"array", "description":"An ordered array of call responses", "items":{ "$ref":"#/components/schemas/VistaResponse_call_responses" } } } }, "asynchronous_vista_body":{ "required":[ "calls", "site_ids" ], "type":"object", "properties":{ "calls":{ "type":"array", "description":"An ordered array of calls", "items":{ "$ref":"#/components/schemas/synchronousvista_calls" } }, "app_id":{ "type":"string", "description":"The ID of the application making the call" }, "package_id":{ "type":"string", "description":"The VistA package ID associated with the calls being made" }, "site_ids":{ "type":"array", "description":"An ordered array of VistA site ids. The calls will be made asynchronously to all the VistA sites.", "items":{ "type":"string" } } }, "description":"Request object to do asynchronous CRUD operations with VistA" }, "VistaResponse_call_info":{ "type":"object", "properties":{ "is_transactional":{ "type":"boolean", "description":"Whether or not the call made was transactional" }, "operation":{ "type":"string", "description":"The operation of the call made", "enum":[ "CREATE", "READ", "UPDATE", "DELETE" ] }, "max_record_depth":{ "type":"integer", "description":"If the call made was a READ, the value max_record_depth was set to." }, "max_records_returned":{ "type":"integer", "description":"If the call made was a READ, the value max_records_returned was set to." } }, "description":"Information about a call that was made" }, "VistaResponse_http_response":{ "type":"object", "properties":{ "http_status_code":{ "type":"integer", "description":"The HTTP status code associated with the call response" }, "message":{ "type":"string", "description":"The description/message associated with an http response" } }, "description":"The HTTP Response associated with a call response" }, "VistaResponse_call_responses":{ "type":"object", "properties":{ "call_info":{ "$ref":"#/components/schemas/VistaResponse_call_info" }, "http_response":{ "$ref":"#/components/schemas/VistaResponse_http_response" }, "records":{ "type":"array", "description":"Not used for transactional calls. Not used for updates or deletes. For non-transactional calls, an array with a single record ien created OR an array of all of the records read back.", "items":{ "$ref":"#/components/schemas/synchronousvista_record" } } }, "description":"The response from a call. A transactional call will have a single call response. A non-transactional call will have each operation treated as a separate call." } } } } ]]>
+</Data>
+</XData>
+</Class>
+<Class name="vgen.model.synchronousvistabody">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.427064919</TimeChanged>
+<TimeCreated>67041,10620.295310599</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="appid">
+<Description> The ID of the application making the call</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="app_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="calls">
+<Description> A conceptual webservice call to VistA using this API</Description>
+<Type>vgen.model.synchronousvistacalls</Type>
+<Collection>list</Collection>
+<Required>1</Required>
+</Property>
+<Property name="packageid">
+<Description> The VistA package ID associated with the calls being made</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="package_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="siteid">
+<Description> The id of the VistA site</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="site_id"/>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.synchronousvistacalls">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.295035582</TimeChanged>
+<TimeCreated>67041,10620.294279712</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="istransactional">
+<Description> Whether or not this is a transactional call</Description>
+<Type>%Boolean</Type>
+<Parameter name="%JSONFIELDNAME" value="is_transactional"/>
+</Property>
+<Property name="operations">
+<Description> The CRUD operation associated with the Record.</Description>
+<Type>vgen.model.synchronousvistaoperations</Type>
+<Collection>list</Collection>
+<Required>1</Required>
+</Property>
+</Class>
+<Class name="vgen.model.synchronousvistaoperations">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.428641233</TimeChanged>
+<TimeCreated>67041,10620.292864484</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="maxrecorddepth">
+<Description> For READ operations, the max Record Object depth. Defaults to 2. Ignored for operations other than READ.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_record_depth"/>
+</Property>
+<Property name="maxrecordsreturned">
+<Description> For READ operations, the max number of records returned. Defaults to 50. Ignored for operations other than READ.</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="max_records_returned"/>
+</Property>
+<Property name="operation">
+<Description> The CRUD operation</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<Parameter name="MAXLEN"/>
+<Parameter name="VALUELIST" value=",CREATE,READ,UPDATE,DELETE"/>
+</Property>
+<Property name="record">
+<Description> Represents a record in VistA. Synonymous with a table row in a database.</Description>
+<Type>vgen.model.synchronousvistarecord</Type>
+<Required>1</Required>
+</Property>
+</Class>
+<Class name="vgen.model.synchronousvistarecord">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.429669568</TimeChanged>
+<TimeCreated>67041,10620.291944947</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="file">
+<Description> a VistA File. Analogous with a database table.</Description>
+<Type>vgen.model.synchronousvistarecordfile</Type>
+</Property>
+<Property name="ien">
+<Description> Internal Entry Number.. analogous to a primary key id in a database.</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.synchronousvistarecordfile">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.430567134</TimeChanged>
+<TimeCreated>67041,10620.291034867</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="fields">
+<Description> A field on a File. The name or id number is required.</Description>
+<Type>vgen.model.synchronousvistarecordfilefields</Type>
+<Collection>list</Collection>
+</Property>
+<Property name="id">
+<Description> The file identifier.. dot delimited numbers</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<Parameter name="MAXLEN"/>
+</Property>
+</Class>
+<Class name="vgen.model.synchronousvistarecordfilefields">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SerialObject,%JSON.Adaptor,%XML.Adaptor</Super>
+<TimeChanged>67041,10620.43299261</TimeChanged>
+<TimeCreated>67041,10620.289736942</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="id">
+<Description> The identifying number of the field</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="name">
+<Description> The name of the field.</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="value">
+<Description> The value of the field</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="valuetype">
+<Description> The type associated with the field value</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="value_type"/>
+<Parameter name="MAXLEN"/>
+<Parameter name="VALUELIST" value=",DATE/TIME,NUMERIC,SET_OF_CODES,FREE_TEXT,WORD-PROCESSING,COMPUTED,POINTER_TO_A_FILE,VARIABLE-POINTER,MUMPS,MULTIPLE,BOOLEAN,LABEL_REFERENCE,TIME,YEAR,UNIVERSAL_TIME,FT_POINTER,FT_DATE,RATIO"/>
+</Property>
+</Class>
+<Class name="vgen.requests.asynchronousvistaPOST">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.Request</Super>
+<TimeChanged>67041,10620.39924558</TimeChanged>
+<TimeCreated>67041,10620.305745981</TimeCreated>
+<Property name="%Consume">
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="%ContentType">
+<Type>%String</Type>
+<InitialExpression>"application/json"</InitialExpression>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="%URL">
+<Type>%String</Type>
+<InitialExpression>..#URL</InitialExpression>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="asynchronousvistabody">
+<Description> Use this property for body content with content-type = application/json.</Description>
+<Type>vgen.model.asynchronousvistabody</Type>
+</Property>
+<Property name="headersecid">
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Method name="LoadHttpRequestObject">
+<Description> Load %Net.HttpRequest with this property object.</Description>
+<ClassMethod>0</ClassMethod>
+<FormalSpec>
+<![CDATA[ &httpRequest:%Net.HttpRequest ]]>
+</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK Set httpRequest.ContentType = ..%ContentType Do httpRequest.SetHeader("accept", ..%Consume) Do httpRequest.SetHeader("sec_id", ..headersecid) If $Piece($$$LOWER(..%ContentType),";",1) = "application/json" Return ..asynchronousvistabody.%JSONExportToStream(httpRequest.EntityBody) Quit sc ]]>
+</Implementation>
+</Method>
+<Parameter name="METHOD">
+<Default>post</Default>
+</Parameter>
+<Parameter name="URL">
+<Default>/asynchronous/vista</Default>
+</Parameter>
+</Class>
+<Class name="vgen.requests.synchronousvistaPOST">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.Request</Super>
+<TimeChanged>67041,10620.397237139</TimeChanged>
+<TimeCreated>67041,10620.302822155</TimeCreated>
+<Property name="%Consume">
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="%ContentType">
+<Type>%String</Type>
+<InitialExpression>"application/json"</InitialExpression>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="%URL">
+<Type>%String</Type>
+<InitialExpression>..#URL</InitialExpression>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="headersecid">
+<Type>%String</Type>
+<Parameter name="MAXLEN"/>
+</Property>
+<Property name="synchronousvistabody">
+<Description> Use this property for body content with content-type = application/json.</Description>
+<Type>vgen.model.synchronousvistabody</Type>
+</Property>
+<Method name="LoadHttpRequestObject">
+<Description> Load %Net.HttpRequest with this property object.</Description>
+<ClassMethod>0</ClassMethod>
+<FormalSpec>
+<![CDATA[ &httpRequest:%Net.HttpRequest ]]>
+</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK Set httpRequest.ContentType = ..%ContentType Do httpRequest.SetHeader("accept", ..%Consume) Do httpRequest.SetHeader("sec_id", ..headersecid) If $Piece($$$LOWER(..%ContentType),";",1) = "application/json" Return ..synchronousvistabody.%JSONExportToStream(httpRequest.EntityBody) Quit sc ]]>
+</Implementation>
+</Method>
+<Parameter name="METHOD">
+<Default>post</Default>
+</Parameter>
+<Parameter name="URL">
+<Default>/synchronous/vista</Default>
+</Parameter>
+</Class>
+<Class name="vgen.responses.GenericResponse">
+<Description> Generic Response Class</Description>
+<ProcedureBlock>1</ProcedureBlock>
+<Super>Ens.Response</Super>
+<TimeChanged>67041,10620.401965843</TimeChanged>
+<TimeCreated>67041,10620.400854296</TimeCreated>
+<Inheritance>left</Inheritance>
+<Property name="body">
+<Type>%Stream.GlobalCharacter</Type>
+</Property>
+<Property name="headers">
+<Type>%String</Type>
+<Collection>array</Collection>
+<Parameter name="MAXLEN" value="128"/>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+<Property name="httpStatusCode">
+<Type>%Integer</Type>
+</Property>
+<Property name="operation">
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="128"/>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+<Property name="status">
+<Description> Status for parts of the response handling like JSON Parsing. /// This allows for returning the response body that will not be returned if the request fails.</Description>
+<Type>%Status</Type>
+</Property>
+<Method name="LoadFromResponse">
+<FormalSpec>httpResponse:%Net.HttpResponse,caller:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK Do ..body.CopyFrom(httpResponse.Data) Set ..httpStatusCode = httpResponse.StatusCode Set ..operation = caller Set key = "" For { Set key = $Order(httpResponse.Headers(key), 1, headerValue) Quit:key="" Do ..headers.SetAt(headerValue, key) } Quit sc ]]>
+</Implementation>
+</Method>
+</Class>
+<Class name="vgen.responses.asynchronousvistaPOST">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>vgen.responses.GenericResponse</Super>
+<TimeChanged>67041,10620.403332061</TimeChanged>
+<TimeCreated>67041,10620.400412556</TimeCreated>
+<Method name="LoadFromResponse">
+<Description> Implement operationId : asynchronousvistaPOST post /asynchronous/vista</Description>
+<FormalSpec>httpResponse:%Net.HttpResponse,caller:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK Do ##super(httpResponse, caller) Return sc ]]>
+</Implementation>
+</Method>
+</Class>
+<Class name="vgen.responses.synchronousvistaPOST">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>vgen.responses.GenericResponse</Super>
+<TimeChanged>67041,10620.402751315</TimeChanged>
+<TimeCreated>67041,10620.399567882</TimeCreated>
+<Property name="inlineresponse200">
+<Description> http status code = 200 content-type = application/json /// Success</Description>
+<Type>vgen.model.inlineresponse200</Type>
+</Property>
+<Method name="LoadFromResponse">
+<Description> Implement operationId : synchronousvistaPOST post /synchronous/vista</Description>
+<FormalSpec>httpResponse:%Net.HttpResponse,caller:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation>
+<![CDATA[ Set sc = $$$OK Do ##super(httpResponse, caller) If $$$LOWER($Piece(httpResponse.ContentType,";",1))="application/json",httpResponse.StatusCode = "200" { Set ..inlineresponse200 = ##class(vgen.model.inlineresponse200).%New() Set ..status = ..inlineresponse200.%JSONImport(httpResponse.Data) Return sc } Return sc ]]>
+</Implementation>
+</Method>
+</Class>
+</Export>
