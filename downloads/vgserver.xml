@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="IRIS" version="26" zv="IRIS for UNIX (Ubuntu Server LTS for x86-64 Containers) 2024.1 (Build 262U)" ts="2024-07-25 13:40:33">
+<Export generator="IRIS" version="26" zv="IRIS for UNIX (Ubuntu Server LTS for x86-64 Containers) 2024.1 (Build 262U)" ts="2024-07-25 23:45:38">
 <Class name="vgserver.Spec">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%RegisteredObject</Super>
-<TimeChanged>67046,49232.712936181</TimeChanged>
-<TimeCreated>67046,49232.701921599</TimeCreated>
+<TimeChanged>67046,85537.776731468</TimeChanged>
+<TimeCreated>67046,85537.624495622</TimeCreated>
 
 <XData name="OpenAPI">
 <MimeType>application/json</MimeType>
@@ -67,6 +67,78 @@
                 }
               }
             }
+          },
+          "400":{
+            "description":"Invalid request. Returns error message explaining why request is invalid.",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "Bad Request":{
+                    "value":{
+                      "message":"Bad Request",
+                      "http_response_code":"400"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401":{
+            "description":"Invalid Authentication Credentials",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "Unauthorized":{
+                    "value":{
+                      "message":"Invalid authorization credentials.",
+                      "http_response_code":"401"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422":{
+            "description":"Invalid request: validation failure.",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "Validation Failure":{
+                    "value":{
+                      "message":"Validation failure. Required field ien missing.",
+                      "http_response_code":"422"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500":{
+            "description":"Internal server error. Returns error message explaining the internal server error.",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "InternalServerError":{
+                    "value":{
+                      "message":"Internal server error.",
+                      "http_response_code":"500"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -96,6 +168,93 @@
           "required":true
         },
         "responses":{
+          "200":{
+            "description":"Acknowledgement that the request was received and passes basic muster.",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "type":"string"
+                },
+                "examples":{
+                  "async_ack":{
+                    "value":"\"Request received. Basic payload inspection passed. Payload sent for asynchronous processing.\""
+                  }
+                }
+              }
+            }
+          },
+          "400":{
+            "description":"Invalid request. Returns error message explaining why request is invalid.",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "Bad Request":{
+                    "value":{
+                      "message":"Bad Request",
+                      "http_response_code":"400"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401":{
+            "description":"Invalid Authentication Credentials",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "Unauthorized":{
+                    "value":{
+                      "message":"Invalid authorization credentials.",
+                      "http_response_code":"401"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422":{
+            "description":"Invalid request: validation failure.",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "Validation Failure":{
+                    "value":{
+                      "message":"Validation failure. Required field ien missing.",
+                      "http_response_code":"422"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500":{
+            "description":"Internal server error. Returns error message explaining the internal server error.",
+            "content":{
+              "application/json":{
+                "schema":{
+                  "$ref":"#/components/schemas/inline_response_400"
+                },
+                "examples":{
+                  "InternalServerError":{
+                    "value":{
+                      "message":"Internal server error.",
+                      "http_response_code":"500"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "501":{
             "description":"Not Implemented"
           }
@@ -292,6 +451,9 @@
             "items":{
               "type":"string"
             }
+          },
+          "async_callback":{
+            "$ref":"#/components/schemas/asynchronousvista_async_callback"
           }
         },
         "description":"Request object to do asynchronous CRUD operations with VistA"
@@ -315,7 +477,7 @@
             "$ref":"#/components/schemas/VistaResponse_call_info"
           },
           "http_response":{
-            "$ref":"#/components/schemas/VistaResponse_http_response"
+            "$ref":"#/components/schemas/inline_response_400"
           },
           "records":{
             "type":"array",
@@ -368,6 +530,30 @@
           }
         },
         "description":"The HTTP Response associated with a call response"
+      },
+      "AsyncCallback":{
+        "required":[
+          "url"
+        ],
+        "type":"object",
+        "properties":{
+          "url":{
+            "type":"string",
+            "description":"URL of RESTful callback service."
+          },
+          "http_method":{
+            "type":"string",
+            "description":"The HTTP method of the URL of the callback service."
+          },
+          "etc":{
+            "type":"array",
+            "description":"An ordered array of additional properties required for callback.",
+            "items":{
+              "type":"string"
+            }
+          }
+        },
+        "description":"Information client sends if they want to specify a RESTful location to receive response information from an asyncronous call."
       },
       "synchronousvista_record_file_fields":{
         "type":"object",
@@ -540,6 +726,44 @@
           }
         }
       },
+      "inline_response_400":{
+        "type":"object",
+        "properties":{
+          "http_status_code":{
+            "type":"integer",
+            "description":"The HTTP status code associated with the call response"
+          },
+          "message":{
+            "type":"string",
+            "description":"The description/message associated with an http response"
+          }
+        },
+        "description":"The HTTP Response associated with a call response"
+      },
+      "asynchronousvista_async_callback":{
+        "required":[
+          "url"
+        ],
+        "type":"object",
+        "properties":{
+          "url":{
+            "type":"string",
+            "description":"URL of RESTful callback service."
+          },
+          "http_method":{
+            "type":"string",
+            "description":"The HTTP method of the URL of the callback service."
+          },
+          "etc":{
+            "type":"array",
+            "description":"An ordered array of additional properties required for callback.",
+            "items":{
+              "type":"string"
+            }
+          }
+        },
+        "description":"Information client sends if they want to specify a RESTful location to receive response information from an asyncronous call."
+      },
       "asynchronous_vista_body":{
         "required":[
           "calls",
@@ -568,6 +792,9 @@
             "items":{
               "type":"string"
             }
+          },
+          "async_callback":{
+            "$ref":"#/components/schemas/asynchronousvista_async_callback"
           }
         },
         "description":"Request object to do asynchronous CRUD operations with VistA"
@@ -600,20 +827,6 @@
         },
         "description":"Information about a call that was made"
       },
-      "VistaResponse_http_response":{
-        "type":"object",
-        "properties":{
-          "http_status_code":{
-            "type":"integer",
-            "description":"The HTTP status code associated with the call response"
-          },
-          "message":{
-            "type":"string",
-            "description":"The description/message associated with an http response"
-          }
-        },
-        "description":"The HTTP Response associated with a call response"
-      },
       "VistaResponse_call_responses":{
         "type":"object",
         "properties":{
@@ -621,7 +834,7 @@
             "$ref":"#/components/schemas/VistaResponse_call_info"
           },
           "http_response":{
-            "$ref":"#/components/schemas/VistaResponse_http_response"
+            "$ref":"#/components/schemas/inline_response_400"
           },
           "records":{
             "type":"array",
@@ -632,6 +845,80 @@
           }
         },
         "description":"The response from a call. A transactional call will have a single call response. A non-transactional call will have each operation treated as a separate call."
+      }
+    },
+    "responses":{
+      "Unauthorized":{
+        "description":"Invalid Authentication Credentials",
+        "content":{
+          "application/json":{
+            "schema":{
+              "$ref":"#/components/schemas/inline_response_400"
+            },
+            "examples":{
+              "Unauthorized":{
+                "value":{
+                  "message":"Invalid authorization credentials.",
+                  "http_response_code":"401"
+                }
+              }
+            }
+          }
+        }
+      },
+      "InternalServerError":{
+        "description":"Internal server error. Returns error message explaining the internal server error.",
+        "content":{
+          "application/json":{
+            "schema":{
+              "$ref":"#/components/schemas/inline_response_400"
+            },
+            "examples":{
+              "InternalServerError":{
+                "value":{
+                  "message":"Internal server error.",
+                  "http_response_code":"500"
+                }
+              }
+            }
+          }
+        }
+      },
+      "BadRequest":{
+        "description":"Invalid request. Returns error message explaining why request is invalid.",
+        "content":{
+          "application/json":{
+            "schema":{
+              "$ref":"#/components/schemas/inline_response_400"
+            },
+            "examples":{
+              "Bad Request":{
+                "value":{
+                  "message":"Bad Request",
+                  "http_response_code":"400"
+                }
+              }
+            }
+          }
+        }
+      },
+      "ValidationFailure":{
+        "description":"Invalid request: validation failure.",
+        "content":{
+          "application/json":{
+            "schema":{
+              "$ref":"#/components/schemas/inline_response_400"
+            },
+            "examples":{
+              "Validation Failure":{
+                "value":{
+                  "message":"Validation failure. Required field ien missing.",
+                  "http_response_code":"422"
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -644,8 +931,8 @@
 <Class name="vgserver.disp">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%CSP.REST</Super>
-<TimeChanged>67046,49232.763303082</TimeChanged>
-<TimeCreated>67046,49232.759197266</TimeCreated>
+<TimeChanged>67046,85537.949516378</TimeChanged>
+<TimeCreated>67046,85537.94538912</TimeCreated>
 
 <Method name="SwaggerSpec">
 <Description>
@@ -755,8 +1042,8 @@ Process request post /synchronous/vista</Description>
 <Class name="vgserver.impl">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%REST.Impl</Super>
-<TimeChanged>67046,49232.766131814</TimeChanged>
-<TimeCreated>67046,49232.763850891</TimeCreated>
+<TimeChanged>67046,85537.952471476</TimeChanged>
+<TimeCreated>67046,85537.950069991</TimeCreated>
 
 <Method name="SwaggerSpec">
 <Description>
@@ -803,11 +1090,41 @@ Service implemntation for post /synchronous/vista</Description>
 </Class>
 
 
+<Class name="vgserver.model.AsyncCallback">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%JSON.Adaptor,%RegisteredObject</Super>
+<TimeChanged>67046,85537.823064922</TimeChanged>
+<TimeCreated>67046,85537.822232142</TimeCreated>
+<Inheritance>left</Inheritance>
+
+<Property name="etc">
+<Description>
+An ordered array of additional properties required for callback.</Description>
+<Type>%String</Type>
+<Collection>list</Collection>
+</Property>
+
+<Property name="httpmethod">
+<Description>
+The HTTP method of the URL of the callback service.</Description>
+<Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="http_method"/>
+</Property>
+
+<Property name="url">
+<Description>
+URL of RESTful callback service.</Description>
+<Type>%String</Type>
+<Required>1</Required>
+</Property>
+</Class>
+
+
 <Class name="vgserver.model.AsyncVistaRequest">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.731962638</TimeChanged>
-<TimeCreated>67046,49232.730951872</TimeCreated>
+<TimeChanged>67046,85537.817762258</TimeChanged>
+<TimeCreated>67046,85537.816554777</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="appid">
@@ -815,6 +1132,13 @@ Service implemntation for post /synchronous/vista</Description>
 The ID of the application making the call</Description>
 <Type>%String</Type>
 <Parameter name="%JSONFIELDNAME" value="app_id"/>
+</Property>
+
+<Property name="asynccallback">
+<Description>
+Information client sends if they want to specify a RESTful location to receive response information from an asyncronous call.</Description>
+<Type>vgserver.model.asynchronousvistaasynccallback</Type>
+<Parameter name="%JSONFIELDNAME" value="async_callback"/>
 </Property>
 
 <Property name="calls">
@@ -845,8 +1169,8 @@ An ordered array of VistA site ids. The calls will be made asynchronously to all
 <Class name="vgserver.model.Call">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.72925926</TimeChanged>
-<TimeCreated>67046,49232.72856883</TimeCreated>
+<TimeChanged>67046,85537.814966493</TimeChanged>
+<TimeCreated>67046,85537.814296679</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="istransactional">
@@ -869,8 +1193,8 @@ The CRUD operation associated with the Record.</Description>
 <Class name="vgserver.model.CallInfo">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.735024335</TimeChanged>
-<TimeCreated>67046,49232.73404568</TimeCreated>
+<TimeChanged>67046,85537.820990385</TimeChanged>
+<TimeCreated>67046,85537.820026745</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="istransactional">
@@ -906,8 +1230,8 @@ The operation of the call made</Description>
 <Class name="vgserver.model.CallResponse">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.733756981</TimeChanged>
-<TimeCreated>67046,49232.732981394</TimeCreated>
+<TimeChanged>67046,85537.819680861</TimeChanged>
+<TimeCreated>67046,85537.818846767</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="callinfo">
@@ -920,7 +1244,7 @@ Information about a call that was made</Description>
 <Property name="httpresponse">
 <Description>
 The HTTP Response associated with a call response</Description>
-<Type>vgserver.model.VistaResponsehttpresponse</Type>
+<Type>vgserver.model.inlineresponse400</Type>
 <Parameter name="%JSONFIELDNAME" value="http_response"/>
 </Property>
 
@@ -936,8 +1260,8 @@ Represents a record in VistA. Synonymous with a table row in a database.</Descri
 <Class name="vgserver.model.Field">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.72499736</TimeChanged>
-<TimeCreated>67046,49232.723948601</TimeCreated>
+<TimeChanged>67046,85537.810755463</TimeChanged>
+<TimeCreated>67046,85537.80559819</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="id">
@@ -971,8 +1295,8 @@ The type associated with the field value</Description>
 <Class name="vgserver.model.File">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.725968045</TimeChanged>
-<TimeCreated>67046,49232.725302186</TimeCreated>
+<TimeChanged>67046,85537.811759553</TimeChanged>
+<TimeCreated>67046,85537.811087452</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="fields">
@@ -994,8 +1318,8 @@ The file identifier.. dot delimited numbers</Description>
 <Class name="vgserver.model.HttpResponse">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.735972304</TimeChanged>
-<TimeCreated>67046,49232.735347184</TimeCreated>
+<TimeChanged>67046,85537.821938762</TimeChanged>
+<TimeCreated>67046,85537.821319192</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="httpstatuscode">
@@ -1016,8 +1340,8 @@ The description/message associated with an http response</Description>
 <Class name="vgserver.model.Operation">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.728262532</TimeChanged>
-<TimeCreated>67046,49232.727167764</TimeCreated>
+<TimeChanged>67046,85537.813976982</TimeChanged>
+<TimeCreated>67046,85537.812957157</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="maxrecorddepth">
@@ -1054,8 +1378,8 @@ Represents a record in VistA. Synonymous with a table row in a database.</Descri
 <Class name="vgserver.model.Record">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.726910237</TimeChanged>
-<TimeCreated>67046,49232.726254028</TimeCreated>
+<TimeChanged>67046,85537.812678157</TimeChanged>
+<TimeCreated>67046,85537.812029587</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="file">
@@ -1076,8 +1400,8 @@ Internal Entry Number.. analogous to a primary key id in a database.</Descriptio
 <Class name="vgserver.model.VistaRequest">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.73062602</TimeChanged>
-<TimeCreated>67046,49232.729523546</TimeCreated>
+<TimeChanged>67046,85537.816245597</TimeChanged>
+<TimeCreated>67046,85537.815240314</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="appid">
@@ -1114,8 +1438,8 @@ The id of the VistA site</Description>
 <Class name="vgserver.model.VistaResponse">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.732726937</TimeChanged>
-<TimeCreated>67046,49232.7322752</TimeCreated>
+<TimeChanged>67046,85537.818585909</TimeChanged>
+<TimeCreated>67046,85537.818105661</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="callresponses">
@@ -1131,8 +1455,8 @@ The response from a call. A transactional call will have a single call response.
 <Class name="vgserver.model.VistaResponsecallinfo">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.746346909</TimeChanged>
-<TimeCreated>67046,49232.745372957</TimeCreated>
+<TimeChanged>67046,85537.837004911</TimeChanged>
+<TimeCreated>67046,85537.835756979</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="istransactional">
@@ -1168,8 +1492,8 @@ The operation of the call made</Description>
 <Class name="vgserver.model.VistaResponsecallresponses">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.748602504</TimeChanged>
-<TimeCreated>67046,49232.747748668</TimeCreated>
+<TimeChanged>67046,85537.838472097</TimeChanged>
+<TimeCreated>67046,85537.837380293</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="callinfo">
@@ -1182,7 +1506,7 @@ Information about a call that was made</Description>
 <Property name="httpresponse">
 <Description>
 The HTTP Response associated with a call response</Description>
-<Type>vgserver.model.VistaResponsehttpresponse</Type>
+<Type>vgserver.model.inlineresponse400</Type>
 <Parameter name="%JSONFIELDNAME" value="http_response"/>
 </Property>
 
@@ -1195,24 +1519,32 @@ Represents a record in VistA. Synonymous with a table row in a database.</Descri
 </Class>
 
 
-<Class name="vgserver.model.VistaResponsehttpresponse">
+<Class name="vgserver.model.asynchronousvistaasynccallback">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.747389053</TimeChanged>
-<TimeCreated>67046,49232.74667212</TimeCreated>
+<TimeChanged>67046,85537.833843132</TimeChanged>
+<TimeCreated>67046,85537.832817873</TimeCreated>
 <Inheritance>left</Inheritance>
 
-<Property name="httpstatuscode">
+<Property name="etc">
 <Description>
-The HTTP status code associated with the call response</Description>
-<Type>%Integer</Type>
-<Parameter name="%JSONFIELDNAME" value="http_status_code"/>
+An ordered array of additional properties required for callback.</Description>
+<Type>%String</Type>
+<Collection>list</Collection>
 </Property>
 
-<Property name="message">
+<Property name="httpmethod">
 <Description>
-The description/message associated with an http response</Description>
+The HTTP method of the URL of the callback service.</Description>
 <Type>%String</Type>
+<Parameter name="%JSONFIELDNAME" value="http_method"/>
+</Property>
+
+<Property name="url">
+<Description>
+URL of RESTful callback service.</Description>
+<Type>%String</Type>
+<Required>1</Required>
 </Property>
 </Class>
 
@@ -1220,8 +1552,8 @@ The description/message associated with an http response</Description>
 <Class name="vgserver.model.asynchronousvistabody">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.744987624</TimeChanged>
-<TimeCreated>67046,49232.743979916</TimeCreated>
+<TimeChanged>67046,85537.835429229</TimeChanged>
+<TimeCreated>67046,85537.83424696</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="appid">
@@ -1229,6 +1561,13 @@ The description/message associated with an http response</Description>
 The ID of the application making the call</Description>
 <Type>%String</Type>
 <Parameter name="%JSONFIELDNAME" value="app_id"/>
+</Property>
+
+<Property name="asynccallback">
+<Description>
+Information client sends if they want to specify a RESTful location to receive response information from an asyncronous call.</Description>
+<Type>vgserver.model.asynchronousvistaasynccallback</Type>
+<Parameter name="%JSONFIELDNAME" value="async_callback"/>
 </Property>
 
 <Property name="calls">
@@ -1259,8 +1598,8 @@ An ordered array of VistA site ids. The calls will be made asynchronously to all
 <Class name="vgserver.model.inlineresponse200">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.743628588</TimeChanged>
-<TimeCreated>67046,49232.743157932</TimeCreated>
+<TimeChanged>67046,85537.831482208</TimeChanged>
+<TimeCreated>67046,85537.830899807</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="callresponses">
@@ -1273,11 +1612,33 @@ The response from a call. A transactional call will have a single call response.
 </Class>
 
 
+<Class name="vgserver.model.inlineresponse400">
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%JSON.Adaptor,%RegisteredObject</Super>
+<TimeChanged>67046,85537.832517339</TimeChanged>
+<TimeCreated>67046,85537.831770117</TimeCreated>
+<Inheritance>left</Inheritance>
+
+<Property name="httpstatuscode">
+<Description>
+The HTTP status code associated with the call response</Description>
+<Type>%Integer</Type>
+<Parameter name="%JSONFIELDNAME" value="http_status_code"/>
+</Property>
+
+<Property name="message">
+<Description>
+The description/message associated with an http response</Description>
+<Type>%String</Type>
+</Property>
+</Class>
+
+
 <Class name="vgserver.model.synchronousvistabody">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.742830912</TimeChanged>
-<TimeCreated>67046,49232.741779492</TimeCreated>
+<TimeChanged>67046,85537.830529163</TimeChanged>
+<TimeCreated>67046,85537.829331208</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="appid">
@@ -1314,8 +1675,8 @@ The id of the VistA site</Description>
 <Class name="vgserver.model.synchronousvistacalls">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.741501114</TimeChanged>
-<TimeCreated>67046,49232.740791448</TimeCreated>
+<TimeChanged>67046,85537.829013262</TimeChanged>
+<TimeCreated>67046,85537.828140329</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="istransactional">
@@ -1338,8 +1699,8 @@ The CRUD operation associated with the Record.</Description>
 <Class name="vgserver.model.synchronousvistaoperations">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.740480243</TimeChanged>
-<TimeCreated>67046,49232.739362561</TimeCreated>
+<TimeChanged>67046,85537.827768058</TimeChanged>
+<TimeCreated>67046,85537.826622071</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="maxrecorddepth">
@@ -1376,8 +1737,8 @@ Represents a record in VistA. Synonymous with a table row in a database.</Descri
 <Class name="vgserver.model.synchronousvistarecord">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.739096362</TimeChanged>
-<TimeCreated>67046,49232.738442704</TimeCreated>
+<TimeChanged>67046,85537.826335458</TimeChanged>
+<TimeCreated>67046,85537.825654012</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="file">
@@ -1398,8 +1759,8 @@ Internal Entry Number.. analogous to a primary key id in a database.</Descriptio
 <Class name="vgserver.model.synchronousvistarecordfile">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.738167619</TimeChanged>
-<TimeCreated>67046,49232.737519263</TimeCreated>
+<TimeChanged>67046,85537.825360501</TimeChanged>
+<TimeCreated>67046,85537.824685477</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="fields">
@@ -1421,8 +1782,8 @@ The file identifier.. dot delimited numbers</Description>
 <Class name="vgserver.model.synchronousvistarecordfilefields">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%JSON.Adaptor,%RegisteredObject</Super>
-<TimeChanged>67046,49232.737212578</TimeChanged>
-<TimeCreated>67046,49232.736244371</TimeCreated>
+<TimeChanged>67046,85537.824370971</TimeChanged>
+<TimeCreated>67046,85537.823361215</TimeCreated>
 <Inheritance>left</Inheritance>
 
 <Property name="id">
@@ -1456,8 +1817,8 @@ The type associated with the field value</Description>
 <Class name="vgserver.requests.asynchronousvistaPOST">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%RegisteredObject</Super>
-<TimeChanged>67046,49232.758826155</TimeChanged>
-<TimeCreated>67046,49232.750987372</TimeCreated>
+<TimeChanged>67046,85537.945037699</TimeChanged>
+<TimeCreated>67046,85537.84191058</TimeCreated>
 
 <Property name="%Consume">
 <Type>%String</Type>
@@ -1530,8 +1891,8 @@ Load object properties from %CSP.Request object.</Description>
 <Class name="vgserver.requests.synchronousvistaPOST">
 <ProcedureBlock>1</ProcedureBlock>
 <Super>%RegisteredObject</Super>
-<TimeChanged>67046,49232.757245761</TimeChanged>
-<TimeCreated>67046,49232.749107795</TimeCreated>
+<TimeChanged>67046,85537.943342836</TimeChanged>
+<TimeCreated>67046,85537.838935362</TimeCreated>
 
 <Property name="%Consume">
 <Type>%String</Type>
