@@ -1,0 +1,365 @@
+openapi: 3.0.2
+info:
+    title: VALIP Generic VistA CRUD API
+    version: 1.0.0
+    description: Internal API for generically doing CRUD operations with VistA instances
+    contact:
+        name: MunChul Shin
+        email: munchul.shin@va.gov
+paths:
+    /synchronous/vista:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/VistaRequest'
+                required: true
+            parameters:
+                -
+                    name: sec_id
+                    description: ''
+                    schema:
+                        type: string
+                    in: header
+                    required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VistaResponse'
+                    description: Success
+                '400':
+                    $ref: '#/components/responses/BadRequest'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '422':
+                    $ref: '#/components/responses/ValidationFailure'
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+            summary: Interact with VistA. CRUD operations will be defined by the payload.
+    /asynchronous/vista:
+        post:
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AsyncVistaRequest'
+                required: true
+            parameters:
+                -
+                    name: sec_id
+                    description: ''
+                    schema:
+                        type: string
+                    in: header
+                    required: true
+            responses:
+                '200':
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                            examples:
+                                async_ack:
+                                    value: >-
+                                        "Request received. Basic payload inspection passed. Payload sent for
+                                        asynchronous processing."
+                    description: Acknowledgement that the request was received and passes basic muster.
+                '400':
+                    $ref: '#/components/responses/BadRequest'
+                '401':
+                    $ref: '#/components/responses/Unauthorized'
+                '422':
+                    $ref: '#/components/responses/ValidationFailure'
+                '500':
+                    $ref: '#/components/responses/InternalServerError'
+                '501':
+                    description: Not Implemented
+components:
+    schemas:
+        Field:
+            description: A field on a File. The name or id number is required.
+            required: []
+            type: object
+            properties:
+                value:
+                    description: The value of the field
+                    type: string
+                name:
+                    description: The name of the field.
+                    type: string
+                id:
+                    description: The identifying number of the field
+                    type: string
+                value_type:
+                    description: The type associated with the field value
+                    enum:
+                        - DATE/TIME
+                        - NUMERIC
+                        - SET_OF_CODES
+                        - FREE_TEXT
+                        - WORD-PROCESSING
+                        - COMPUTED
+                        - POINTER_TO_A_FILE
+                        - VARIABLE-POINTER
+                        - MUMPS
+                        - MULTIPLE
+                        - BOOLEAN
+                        - LABEL_REFERENCE
+                        - TIME
+                        - YEAR
+                        - UNIVERSAL_TIME
+                        - FT_POINTER
+                        - FT_DATE
+                        - RATIO
+                    type: string
+        File:
+            description: a VistA File. Analogous with a database table.
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    description: The file identifier.. dot delimited numbers
+                    type: string
+                fields:
+                    description: An array of fields associated with this File
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Field'
+        Record:
+            description: Represents a record in VistA. Synonymous with a table row in a database.
+            required:
+                - ien
+            type: object
+            properties:
+                ien:
+                    description: Internal Entry Number.. analogous to a primary key id in a database.
+                    type: string
+                file:
+                    $ref: '#/components/schemas/File'
+                    description: The file associated with this Record
+        Operation:
+            description: The CRUD operation associated with the Record.
+            required:
+                - operation
+                - record
+            type: object
+            properties:
+                operation:
+                    description: The CRUD operation
+                    enum:
+                        - CREATE
+                        - READ
+                        - UPDATE
+                        - DELETE
+                    type: string
+                record:
+                    $ref: '#/components/schemas/Record'
+                    description: The Record associated with this Operation.
+                max_records_returned:
+                    description: >-
+                        For READ operations, the max number of records returned. Defaults to 50. Ignored for
+                        operations other than READ.
+                    type: integer
+                max_record_depth:
+                    description: >-
+                        For READ operations, the max Record Object depth. Defaults to 2. Ignored for
+                        operations other than READ.
+                    type: integer
+        Call:
+            description: A conceptual webservice call to VistA using this API
+            required:
+                - is_transactional
+                - operations
+            type: object
+            properties:
+                operations:
+                    description: The ordered list of operations associated with this Call
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Operation'
+                is_transactional:
+                    description: Whether or not this is a transactional call
+                    type: boolean
+        VistaRequest:
+            description: Request object to do synchronous CRUD operations with VistA
+            required:
+                - calls
+                - site_id
+            type: object
+            properties:
+                calls:
+                    description: An ordered array of calls
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Call'
+                app_id:
+                    description: The ID of the application making the call
+                    type: string
+                site_id:
+                    description: The id of the VistA site
+                    type: string
+                package_id:
+                    description: The VistA package ID associated with the calls being made
+                    type: string
+        AsyncVistaRequest:
+            description: Request object to do asynchronous CRUD operations with VistA
+            required:
+                - calls
+                - site_ids
+            type: object
+            properties:
+                calls:
+                    description: An ordered array of calls
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Call'
+                app_id:
+                    description: The ID of the application making the call
+                    type: string
+                package_id:
+                    description: The VistA package ID associated with the calls being made
+                    type: string
+                site_ids:
+                    description: >-
+                        An ordered array of VistA site ids. The calls will be made asynchronously to all the
+                        VistA sites.
+                    type: array
+                    items:
+                        type: string
+                async_callback:
+                    $ref: '#/components/schemas/AsyncCallback'
+                    description: >-
+                        Callback information for client to get back a response from this asynchronous call. If
+                        left blank, then no asynchronous response will be returned to client.
+        VistaResponse:
+            description: ''
+            type: object
+            properties:
+                call_responses:
+                    description: An ordered array of call responses
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/CallResponse'
+        CallResponse:
+            description: >-
+                The response from a call. A transactional call will have a single call response. A
+                non-transactional call will have each operation treated as a separate call.
+            type: object
+            properties:
+                call_info:
+                    $ref: '#/components/schemas/CallInfo'
+                    description: Information about the initial call
+                http_response:
+                    $ref: '#/components/schemas/HttpResponse'
+                    description: HTTP Response code and message associated with the call response
+                records:
+                    description: >-
+                        Not used for transactional calls. Not used for updates or deletes. For
+                        non-transactional calls, an array with a single record ien created OR an array of all
+                        of the records read back.
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Record'
+        CallInfo:
+            description: Information about a call that was made
+            type: object
+            properties:
+                is_transactional:
+                    description: Whether or not the call made was transactional
+                    type: boolean
+                operation:
+                    description: The operation of the call made
+                    enum:
+                        - CREATE
+                        - READ
+                        - UPDATE
+                        - DELETE
+                    type: string
+                max_record_depth:
+                    description: 'If the call made was a READ, the value max_record_depth was set to.'
+                    type: integer
+                max_records_returned:
+                    description: 'If the call made was a READ, the value max_records_returned was set to.'
+                    type: integer
+        HttpResponse:
+            description: The HTTP Response associated with a call response
+            type: object
+            properties:
+                http_status_code:
+                    description: The HTTP status code associated with the call response
+                    type: integer
+                message:
+                    description: The description/message associated with an http response
+                    type: string
+        AsyncCallback:
+            description: >-
+                Information client sends if they want to specify a RESTful location to receive response
+                information from an asyncronous call.
+            required:
+                - url
+            type: object
+            properties:
+                url:
+                    description: URL of RESTful callback service.
+                    type: string
+                http_method:
+                    description: The HTTP method of the URL of the callback service.
+                    type: string
+                etc:
+                    description: An ordered array of additional properties required for callback.
+                    type: array
+                    items:
+                        type: string
+    responses:
+        Unauthorized:
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/HttpResponse'
+                    examples:
+                        Unauthorized:
+                            value:
+                                message: Invalid authorization credentials.
+                                http_response_code: '401'
+            description: Invalid Authentication Credentials
+        InternalServerError:
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/HttpResponse'
+                    examples:
+                        InternalServerError:
+                            value:
+                                message: Internal server error.
+                                http_response_code: '500'
+            description: Internal server error. Returns error message explaining the internal server error.
+        BadRequest:
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/HttpResponse'
+                    examples:
+                        Bad Request:
+                            value:
+                                message: Bad Request
+                                http_response_code: '400'
+            description: Invalid request. Returns error message explaining why request is invalid.
+        ValidationFailure:
+            content:
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/HttpResponse'
+                    examples:
+                        Validation Failure:
+                            value:
+                                message: Validation failure. Required field ien missing.
+                                http_response_code: '422'
+            description: 'Invalid request: validation failure.'
+tags:
+    -
+        name: VistA
+        description: This API communicates with VistA
