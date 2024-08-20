@@ -1,0 +1,460 @@
+{
+    "openapi": "3.0.2",
+    "info": {
+        "title": "Local VistA Foursight II Update Order API",
+        "version": "1.0.0",
+        "description": "Provides methods that allow updating an order.",
+        "contact": {
+            "name": "MunChul Shin",
+            "email": "munchul.shin@va.gov"
+        }
+    },
+    "paths": {
+        "/barcode/multi": {
+            "post": {
+                "requestBody": {
+                    "description": "An array of barcode generation requests",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/GenerateBarcodeRequest"
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/GenerateBarcodeResponse"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Success"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailure"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "PIV": [
+                            "user",
+                            "super user",
+                            "admin"
+                        ]
+                    }
+                ],
+                "summary": "Generate an array of barcodes and return their info in an array.",
+                "description": "Generate multiple barcodes. Return the information associated with the generated barcodes in an array."
+            }
+        },
+        "/stock/multi": {
+            "summary": "Associate multiple barcodes with their corresponding Appliance Repair file 660 record.",
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/StockIssueRequest"
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/StockIssueResponse"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Check individual http_response objects in the Response Body array for info on if a record successfully updated or not."
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailure"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "PIV": [
+                            "user",
+                            "super user",
+                            "admin"
+                        ]
+                    }
+                ],
+                "summary": "Update file 660 with barcode information.",
+                "description": "Runs MUMPS Routine RMPRPIYE/RMPRPIYF. Takes an array of requests, each of which will attempt to update the corresponding file 660 and associated records with barcode information."
+            }
+        },
+        "/suspensecomment/multi": {
+            "summary": "Adds comments to Suspense 668 and Consult 123 records for a patient's prosthetics transaction.",
+            "description": "Run Mumps routines RMPREOS and GMRCGUIB. Looks up the Suspense 668 and Consult 123 records for a corresponding patient SSN and adds a comment to each record, respectively. This is usually done after Generate Barcode and Stock Issue for a given patient prosthetics transaction.",
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/SuspenseProcessingRequest"
+                                }
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SuspenseProcessingResponse"
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Check individual http_response objects in the Response Body array for info on if a record successfully updated or not."
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationFailure"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "PIV": [
+                            "user",
+                            "super user",
+                            "admin"
+                        ]
+                    }
+                ],
+                "summary": "Add comment to files 668 and 123.",
+                "description": "Takes an array of requests, each of which will attempt to look up a patient's suspense and consult records corresponding to the prosthetics transaction, then add a comment to each record."
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "HttpResponse": {
+                "description": "HTTP Status Code and message",
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "description": "Message explaining why something went wrong, or success if request processed without error.",
+                        "type": "string"
+                    },
+                    "http_status_code": {
+                        "description": "The HTTP Status Code for the request. Used primarily for batch responses.",
+                        "type": "string"
+                    }
+                }
+            },
+            "GenerateBarcodeRequest": {
+                "required": [],
+                "type": "object",
+                "properties": {
+                    "station_number": {
+                        "description": "Station IEN.",
+                        "type": "string"
+                    },
+                    "hcpcs_item": {
+                        "description": "HCPCS Code and HCPCS Item.",
+                        "type": "string"
+                    },
+                    "inventory_location": {
+                        "description": "Location IEN.",
+                        "type": "string"
+                    },
+                    "vendor_ifcap": {
+                        "description": "Vendor IEN.",
+                        "type": "string"
+                    },
+                    "unit_of_issue": {
+                        "description": "Unit of issue for the item (e.g. EA).",
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "description": "Quantity of issue for the item.",
+                        "type": "integer"
+                    },
+                    "unit_cost": {
+                        "format": "double",
+                        "description": "Unit cost for the unit of issue.",
+                        "type": "number"
+                    },
+                    "total_cost": {
+                        "format": "double",
+                        "description": "Total cost of the quantity being issued. Use if Unit Cost is not used.",
+                        "type": "number"
+                    },
+                    "hcpcs": {
+                        "description": "HCPCS Code",
+                        "type": "string"
+                    },
+                    "comment": {
+                        "description": "",
+                        "type": "string"
+                    },
+                    "charge_id": {
+                        "description": "A unique charge identifier for each charge entity.",
+                        "type": "string"
+                    }
+                }
+            },
+            "GenerateBarcodeResponse": {
+                "type": "object",
+                "properties": {
+                    "barcode_key": {
+                        "description": "Key used to get a barcode.",
+                        "type": "string"
+                    },
+                    "http_response": {
+                        "$ref": "#/components/schemas/HttpResponse",
+                        "description": "The HTTP Status Code and message associated with a request."
+                    }
+                }
+            },
+            "SuspenseProcessingResponse": {
+                "description": "Response object for Suspense Process Multi. Maps the patient SSN to the HTTP Response.",
+                "type": "object",
+                "properties": {
+                    "http_response": {
+                        "$ref": "#/components/schemas/HttpResponse",
+                        "description": "The HTTP Status Code and message associated with a request."
+                    },
+                    "ssn": {
+                        "description": "The SSN of the patient whose request to update their records corresponds to the http_response.",
+                        "type": "string"
+                    }
+                }
+            },
+            "StockIssueResponse": {
+                "description": "Response object for Stock Issue Multi. Maps the 660 IEN to the HTTP Response.",
+                "type": "object",
+                "properties": {
+                    "ien": {
+                        "description": "The IEN of the file 660 that the http_response is associated with.",
+                        "type": "string"
+                    },
+                    "http_response": {
+                        "$ref": "#/components/schemas/HttpResponse",
+                        "description": "The HTTP Status Code and message associated with a request."
+                    }
+                }
+            },
+            "SuspenseProcessingRequest": {
+                "description": "The data required to be written to files 668 and 123 and to look up these records via SSN.",
+                "required": [
+                    "ssn",
+                    "duz"
+                ],
+                "type": "object",
+                "properties": {
+                    "ssn": {
+                        "description": "Patient SSN used to look up their corresponding 668 and 123 records.",
+                        "type": "string"
+                    },
+                    "duz": {
+                        "description": "Client user's DUZ",
+                        "type": "string"
+                    },
+                    "comment": {
+                        "description": "The comment to be attached.",
+                        "type": "string"
+                    },
+                    "ien_123": {
+                        "description": "The IEN of the Consult File 123 record.",
+                        "type": "string"
+                    }
+                }
+            },
+            "StockIssueRequest": {
+                "description": "The data required to be written to an appliance repair file to associate a barcode with it.",
+                "required": [
+                    "ien_660",
+                    "barcode-key"
+                ],
+                "type": "object",
+                "properties": {
+                    "transaction_type": {
+                        "description": "Set of codes: I: initial issue, R: replace, S: spare, X: repair, 5: rental",
+                        "enum": [
+                            "5",
+                            "I",
+                            "R",
+                            "S",
+                            "X"
+                        ],
+                        "type": "string"
+                    },
+                    "barcode-key": {
+                        "description": "HCPCS-datetime value that defines a barcode.",
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "description": "The number of units that were issued or repaired for this transaction.",
+                        "type": "integer"
+                    },
+                    "serial_number": {
+                        "description": "The serial number of the issued or repaired appliance. Max 20 characters.",
+                        "type": "string"
+                    },
+                    "lot_number": {
+                        "description": "Manufacturer lot number of the appliance.",
+                        "type": "string"
+                    },
+                    "remarks": {
+                        "description": "Additional information about this transaction.",
+                        "type": "string"
+                    },
+                    "ien_660": {
+                        "description": "The IEN associated with the Appliance Repair File 660 the barcode will be associated with.",
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "responses": {
+            "Unauthorized": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/HttpResponse"
+                        },
+                        "examples": {
+                            "Unauthorized": {
+                                "value": {
+                                    "message": "Invalid authorization credentials.",
+                                    "http_status_code": "401"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Invalid Authentication Credentials"
+            },
+            "InternalServerError": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/HttpResponse"
+                        },
+                        "examples": {
+                            "InternalServerError": {
+                                "value": {
+                                    "message": "Internal server error.",
+                                    "http_status_code": "500"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Internal server error. Returns error message explaining the internal server error."
+            },
+            "BadRequest": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/HttpResponse"
+                        },
+                        "examples": {
+                            "Bad Request": {
+                                "value": {
+                                    "message": "Bad Request",
+                                    "http_status_code": "400"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Invalid request. Returns error message explaining why request is invalid."
+            },
+            "ValidationFailure": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/HttpResponse"
+                        },
+                        "examples": {
+                            "Validation Failure": {
+                                "value": {
+                                    "message": "Validation failure. Required field ien missing.",
+                                    "http_status_code": "422"
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Invalid request: validation failure."
+            }
+        },
+        "securitySchemes": {
+            "PIV": {
+                "openIdConnectUrl": "https://int.fed.eauth.va.gov/oauthi/sps/oauth/oauth20/metadata/ISAMOP/.well-known",
+                "type": "openIdConnect",
+                "description": "Authentication"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "VistA",
+            "description": "This API communicates with a VistA instance."
+        },
+        {
+            "name": "Barcode API",
+            "description": "This API generates and gets barcodes."
+        },
+        {
+            "name": "MUMPS Routine",
+            "description": "This API calls a MUMPS Routine"
+        }
+    ]
+}
