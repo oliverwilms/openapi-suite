@@ -9,9 +9,9 @@ FROM $IMAGE
 
 WORKDIR /home/irisowner/irisdev
 
-## install git
+## install pandoc and pdflatex
 USER root   
-RUN apt update && apt-get -y install pandoc
+RUN apt update && apt-get -y install pandoc && apt-get -y install texlive-latex-base
 USER ${ISC_PACKAGE_MGRUSER}
 
 ARG TESTS=0
