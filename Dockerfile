@@ -10,9 +10,9 @@ FROM $IMAGE
 WORKDIR /home/irisowner/irisdev
 
 ## install git
-## USER root   
-##RUN apt update && apt-get -y install git
-##USER ${ISC_PACKAGE_MGRUSER}
+USER root   
+RUN apt update && apt-get -y install pandoc
+USER ${ISC_PACKAGE_MGRUSER}
 
 ARG TESTS=0
 ARG MODULE="openapi-suite"
