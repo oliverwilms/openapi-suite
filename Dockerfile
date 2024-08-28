@@ -11,7 +11,9 @@ WORKDIR /home/irisowner/irisdev
 
 ## install pandoc and pdflatex
 USER root   
-RUN apt update && apt-get -y install pandoc && apt-get -y install texlive-latex-base
+RUN apt update && apt-get -y install pandoc \
+  && apt-get -y install texlive-latex-base \
+  && apt-get -y install haskell-platform
 USER ${ISC_PACKAGE_MGRUSER}
 
 ARG TESTS=0
