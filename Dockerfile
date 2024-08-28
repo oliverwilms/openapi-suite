@@ -25,11 +25,6 @@ ENV IRISNAMESPACE $NAMESPACE
 ENV PYTHON_PATH=/usr/irissys/bin/
 ENV PATH "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin"
 
-RUN sed -i '/jfrog/d' /etc/apt/sources.list \ 
-    && ln -sf /usr/share/zoneinfo/UTC /etc/localtime \ 
-    && export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get -y upgrade \
-    && apt-get -yq install unattended-upgrades \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=bind,src=.,dst=. \
     iris start IRIS && \
